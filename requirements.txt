@@ -1,4 +1,5 @@
 appwrite
+--upgrade pip
 pytesseract
 pillow
 PyPDF2
