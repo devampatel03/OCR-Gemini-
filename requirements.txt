@@ -1,1 +1,8 @@
 appwrite
+pip install pytesseract
+pip install pillow
+pip install PyPDF2
+pip install opencv-python
+pip install numpy
+pip install google-generativeai
+pip install requests
