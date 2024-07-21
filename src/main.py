@@ -148,7 +148,7 @@ def main(context):
         # Generate content using the model
         response = model.generate_content(prompt)
         result = ''.join([p.text for p in response.candidates[0].content.parts])
-        return context.res.send(result)
+        return context.res.json({"result": result})
 
     # `ctx.res.json()` is a handy helper for sending JSON
     return context.res.json(
