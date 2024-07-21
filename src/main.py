@@ -4,20 +4,18 @@ from PIL import Image
 import PyPDF2
 import cv2
 import numpy as np
-
-# from appwrite.client import Client
-
 import google.generativeai as genai
+import requests
+from io import BytesIO
 
 # Function to extract text from PDF
-def extract_text_from_pdf(pdf_path):
+def extract_text_from_pdf(pdf_stream):
     text = ""
-    with open(pdf_path, 'rb') as file:
-        pdf_reader = PyPDF2.PdfReader(file)
-        num_pages = len(pdf_reader.pages)
-        for page_num in range(num_pages):
-            page = pdf_reader.pages[page_num]
-            text += page.extract_text()
+    pdf_reader = PyPDF2.PdfReader(pdf_stream)
+    num_pages = len(pdf_reader.pages)
+    for page_num in range(num_pages):
+        page = pdf_reader.pages[page_num]
+        text += page.extract_text()
     return text
 
 # OCR Preprocessing functions
@@ -62,8 +60,8 @@ def match_template(image, template):
     return cv2.matchTemplate(image, template, cv2.TM_CCOEFF_NORMED)
 
 # Function to extract text from image using OCR with preprocessing
-def extract_text_from_image(image_path):
-    img = cv2.imread(image_path)
+def extract_text_from_image(image_stream):
+    img = np.array(Image.open(image_stream))
     
     gray = get_grayscale(img)
     thresh = thresholding(gray)
@@ -82,31 +80,22 @@ def extract_text_from_image(image_path):
     return combined_text
 
 # Function to process each file and extract text
-def process_file(file_path):
-    if file_path.lower().endswith('.pdf'):
-        print("Processing PDF:", file_path)
-        return extract_text_from_pdf(file_path)
-    elif file_path.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp')):
-        print("Processing Image:", file_path)
-        return extract_text_from_image(file_path)
+def process_file(file_url):
+    response = requests.get(file_url)
+    file_stream = BytesIO(response.content)
+    
+    if file_url.lower().endswith('.pdf'):
+        print("Processing PDF:", file_url)
+        return extract_text_from_pdf(file_stream)
+    elif file_url.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp')):
+        print("Processing Image:", file_url)
+        return extract_text_from_image(file_stream)
     else:
         return ""
-
-# Directory containing the files
-# directory = r'C:\DEVAM\MY PROJECTS\Health analysis app\All_Reports\Healthians Report\pdf'
 
 # This is your Appwrite function
 # It's executed each time we get a request
 def main(context):
-    # Why not try the Appwrite SDK?
-    #
-    # client = (
-    #     Client()
-    #     .set_endpoint("https://cloud.appwrite.io/v1")
-    #     .set_project(os.environ["APPWRITE_FUNCTION_PROJECT_ID"])
-    #     .set_key(os.environ["APPWRITE_API_KEY"])
-    # )
-
     # You can log messages to the console
     context.log("Hello, Logs!")
 
@@ -114,29 +103,22 @@ def main(context):
     context.error("Hello, Errors!")
 
     # The `ctx.req` object contains the request data
-    if context.req.method == "GET":
-        # log(JSON.stringify(req.body));    
-        directory = r'C:\DEVAM\MY PROJECTS\Health analysis app\All_Reports\Smart Pathology Report'
+    if context.req.method == "POST":
+        req_data = context.req.body
+        file_url = req_data.get("url")
 
-        # Initialize variable to store all extracted text
-        all_extracted_text = ""
+        if not file_url:
+            return context.res.json(
+                {"error": "No URL provided in the request body."}, status_code=400
+            )
+        
+        # Process the file from the given URL
+        all_extracted_text = process_file(file_url)
 
-        for filename in os.listdir(directory):
-            if filename.endswith(('.pdf', '.jpg', '.jpeg', '.png', '.gif', '.bmp')):
-                file_path = os.path.join(directory, filename)
-                extracted_text = process_file(file_path)
-                all_extracted_text += extracted_text + "\n"
-
-        print("Exracted text: ", all_extracted_text)
         # API Key for Google Generative AI
         GOOGLE_API_KEY = 'YOUR_API_KEY'
         genai.configure(api_key=GOOGLE_API_KEY)
 
-        # List available models
-        # print('Available models:')
-        # for m in genai.list_models():
-        #     if 'generateContent' in m.supported_generation_methods:
-        #         print(f'- {m.name}')
         model = genai.GenerativeModel('gemini-1.5-pro-latest')
 
         # Construct the prompt
@@ -166,8 +148,7 @@ def main(context):
         # Generate content using the model
         response = model.generate_content(prompt)
         result = ''.join([p.text for p in response.candidates[0].content.parts])
-        # print("Gemini: ", result)
-        return context.res.send(JSON.stringify(req.body))
+        return context.res.send(result)
 
     # `ctx.res.json()` is a handy helper for sending JSON
     return context.res.json(
