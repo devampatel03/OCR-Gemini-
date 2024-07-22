@@ -115,7 +115,7 @@ def main(context):
     context.log("Hello, Logs!")
 
     # If something goes wrong, log an error
-    context.error("Hello, Errors!")
+    # context.error("Hello, Errors!")
 
     # The `ctx.req` object contains the request data
     if context.req.method == "POST":
