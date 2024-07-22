@@ -1,4 +1,9 @@
 import os
+import subprocess
+
+# Run the setup script to install system dependencies
+subprocess.run(["/bin/bash", "setup.sh"], check=True)
+
 import pytesseract
 from PIL import Image
 import PyPDF2
