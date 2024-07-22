@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM appwrite/runtime-for-python:3.11
 
 # Install dependencies
 RUN apt-get update && \
@@ -12,7 +12,7 @@ COPY ./src /usr/local/src
 WORKDIR /usr/local/src
 
 # Install any additional Python dependencies
-RUN pip install --no-cache-dir -r /usr/local/src/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Set the entry point for the function
 ENTRYPOINT ["python3", "main.py"]
