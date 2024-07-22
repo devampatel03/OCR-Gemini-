@@ -1,8 +1,9 @@
 appwrite
-pytesseract
-pillow
-PyPDF2
-opencv-python
 numpy
-google-generativeai
+opencv-python
+pytesseract
+Pillow
+PyPDF2
 requests
+google-generativeai
+

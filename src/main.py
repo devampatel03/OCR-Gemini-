@@ -1,8 +1,18 @@
 import os
 import subprocess
+import sys
 
-# Run the setup script to install system dependencies
-subprocess.run(["/bin/bash", "setup.sh"], check=True)
+# Install system dependencies
+def install_system_dependencies():
+    try:
+        subprocess.run(["apt-get", "update"], check=True)
+        subprocess.run(["apt-get", "install", "-y", "libgl1-mesa-glx", "libglib2.0-0", "tesseract-ocr", "tesseract-ocr-eng"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while installing system dependencies: {e}", file=sys.stderr)
+        sys.exit(1)
+
+# Install system dependencies
+install_system_dependencies()
 
 import pytesseract
 from PIL import Image
@@ -29,14 +39,14 @@ def get_grayscale(image):
 
 def remove_noise(image):
     return cv2.medianBlur(image, 5)
- 
+
 def thresholding(image):
     return cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
 
 def dilate(image):
     kernel = np.ones((5, 5), np.uint8)
     return cv2.dilate(image, kernel, iterations=1)
-    
+
 def erode(image):
     kernel = np.ones((5, 5), np.uint8)
     return cv2.erode(image, kernel, iterations=1)
@@ -67,28 +77,28 @@ def match_template(image, template):
 # Function to extract text from image using OCR with preprocessing
 def extract_text_from_image(image_stream):
     img = np.array(Image.open(image_stream))
-    
+
     gray = get_grayscale(img)
     thresh = thresholding(gray)
     opened = opening(gray)
     edges = canny(gray)
     deskewed = deskew(gray)
-    
+
     text_thresh = pytesseract.image_to_string(thresh)
     text_opened = pytesseract.image_to_string(opened)
     text_edges = pytesseract.image_to_string(edges)
     text_deskewed = pytesseract.image_to_string(deskewed)
-    
+
     # Combine all extracted texts
     combined_text = "\n".join([text_thresh, text_opened, text_edges, text_deskewed])
-    
+
     return combined_text
 
 # Function to process each file and extract text
 def process_file(file_url):
     response = requests.get(file_url)
     file_stream = BytesIO(response.content)
-    
+
     if file_url.lower().endswith('.pdf'):
         print("Processing PDF:", file_url)
         return extract_text_from_pdf(file_stream)
@@ -116,12 +126,12 @@ def main(context):
             return context.res.json(
                 {"error": "No URL provided in the request body."}, status_code=400
             )
-        
+
         # Process the file from the given URL
         all_extracted_text = process_file(file_url)
 
         # API Key for Google Generative AI
-        GOOGLE_API_KEY = 'YOUR_API_KEY'
+        GOOGLE_API_KEY = 'AIzaSyB1tpMueN_3bPbnQGsNOYP7s_NvzrUEtcM'
         genai.configure(api_key=GOOGLE_API_KEY)
 
         model = genai.GenerativeModel('gemini-1.5-pro-latest')
