@@ -1,6 +1,19 @@
 import os
 import subprocess
 import sys
+
+# Install system dependencies
+def install_system_dependencies():
+    try:
+        subprocess.run(["apt-get", "update"], check=True)
+        subprocess.run(["apt-get", "install", "-y", "libgl1-mesa-glx", "libglib2.0-0", "tesseract-ocr", "tesseract-ocr-eng"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"An error occurred while installing system dependencies: {e}", file=sys.stderr)
+        sys.exit(1)
+
+# Install system dependencies
+install_system_dependencies()
+
 import pytesseract
 from PIL import Image
 import PyPDF2
@@ -9,19 +22,6 @@ import numpy as np
 import google.generativeai as genai
 import requests
 from io import BytesIO
-
-# Install system dependencies
-def install_system_dependencies():
-    try:
-        subprocess.run(["apt-get", "update"], check=True)
-        subprocess.run(["apt-get", "install", "-y", "libgl1-mesa-glx", "libglib2.0-0", "tesseract-ocr", "tesseract-ocr-eng"], check=True)
-        print("System dependencies installed successfully")
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred while installing system dependencies: {e}", file=sys.stderr)
-        sys.exit(1)
-
-# Install system dependencies
-install_system_dependencies()
 
 # Function to extract text from PDF
 def extract_text_from_pdf(pdf_stream):
@@ -96,27 +96,23 @@ def extract_text_from_image(image_stream):
 
 # Function to process each file and extract text
 def process_file(file_url):
-    try:
-        response = requests.get(file_url)
-        file_stream = BytesIO(response.content)
+    response = requests.get(file_url)
+    file_stream = BytesIO(response.content)
 
-        if file_url.lower().endswith('.pdf'):
-            print("Processing PDF:", file_url)
-            return extract_text_from_pdf(file_stream)
-        elif file_url.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp')):
-            print("Processing Image:", file_url)
-            return extract_text_from_image(file_stream)
-        else:
-            return ""
-    except Exception as e:
-        print(f"Error processing file: {e}", file=sys.stderr)
+    if file_url.lower().endswith('.pdf'):
+        print("Processing PDF:", file_url)
+        return extract_text_from_pdf(file_stream)
+    elif file_url.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp')):
+        print("Processing Image:", file_url)
+        return extract_text_from_image(file_stream)
+    else:
         return ""
 
 # This is your Appwrite function
 # It's executed each time we get a request
 def main(context):
     # You can log messages to the console
-    context.log("Function execution started")
+    context.log("Hello, Logs!")
 
     # If something goes wrong, log an error
     context.error("Hello, Errors!")
@@ -132,7 +128,6 @@ def main(context):
             )
 
         # Process the file from the given URL
-        context.log(f"Processing file from URL: {file_url}")
         all_extracted_text = process_file(file_url)
 
         # API Key for Google Generative AI
@@ -165,14 +160,10 @@ def main(context):
         Extracted parameters and values:
         """
 
-        try:
-            # Generate content using the model
-            response = model.generate_content(prompt)
-            result = ''.join([p.text for p in response.candidates[0].content.parts])
-            return context.res.json({"result": result})
-        except Exception as e:
-            print(f"Error generating content: {e}", file=sys.stderr)
-            return context.res.json({"error": "Error generating content"}, status_code=500)
+        # Generate content using the model
+        response = model.generate_content(prompt)
+        result = ''.join([p.text for p in response.candidates[0].content.parts])
+        return context.res.json({"result": result})
 
     # `ctx.res.json()` is a handy helper for sending JSON
     return context.res.json(
