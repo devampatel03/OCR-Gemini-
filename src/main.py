@@ -131,7 +131,7 @@ def main(context):
             all_extracted_text = process_file(file_url)
 
             # API Key for Google Generative AI
-            GOOGLE_API_KEY = 'YOUR_API_KEY'
+            GOOGLE_API_KEY = 'AIzaSyB1tpMueN_3bPbnQGsNOYP7s_NvzrUEtcM'
             genai.configure(api_key=GOOGLE_API_KEY)
 
             model = genai.GenerativeModel('gemini-1.5-pro-latest')
