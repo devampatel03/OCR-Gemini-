@@ -310,10 +310,20 @@ def process_file(file_url):
 # This is your Appwrite function
 # It's executed each time we get a request
 def main(context):
-    context.log("Request received.")
+    context.log(f"Request method: {context.req.method}")
+    
     if context.req.method == "POST":
-        context.log("Request received.")
+        context.log("POST method detected.")
+        
         req_data = context.req.body
+        context.log(f"Request body: {req_data}")
+
+        if not req_data:
+            context.log("Request body is empty.")
+            return context.res.json(
+                {"error": "No URL provided in the request body."}, status_code=400
+            )
+
         file_url = req_data.get("url")
 
         if not file_url:
@@ -366,6 +376,7 @@ def main(context):
 
         return context.res.json({"result": result})
 
+    context.log("Not a POST request.")
     return context.res.json(
         {
             "motto": "Build like a team of hundreds_",
@@ -374,4 +385,3 @@ def main(context):
             "getInspired": "https://builtwith.appwrite.io",
         }
     )
-
