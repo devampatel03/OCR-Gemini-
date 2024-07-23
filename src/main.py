@@ -112,13 +112,14 @@ def process_file(file_url):
 # It's executed each time we get a request
 def main(context):
     # You can log messages to the console
-    context.log("Hello, Logs!")
+    # context.log("Hello, Logs!")
 
     # If something goes wrong, log an error
     # context.error("Hello, Errors!")
 
+
     # The `ctx.req` object contains the request data
-    if context.req.method == "GET":
+    if context.req.method == "POST":
         req_data = context.req.body
         file_url = req_data.get("url")
 
@@ -163,6 +164,7 @@ def main(context):
         # Generate content using the model
         response = model.generate_content(prompt)
         result = ''.join([p.text for p in response.candidates[0].content.parts])
+        context.log(result)
         return context.res.json({"result": result})
 
     # `ctx.res.json()` is a handy helper for sending JSON
