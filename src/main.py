@@ -23,14 +23,27 @@ install_system_dependencies()
 
 import google.generativeai as genai
 
+def download_file(url):
+    print(f"Downloading file from URL: {url}")
+    response = requests.get(url)
+    if response.status_code == 200:
+        print("File downloaded successfully.")
+        content_type = response.headers.get('content-type')
+        return BytesIO(response.content), content_type
+    else:
+        raise Exception(f"Failed to download file from URL: {url}")
+    
 # Function to extract text from PDF
 def extract_text_from_pdf(pdf_stream):
     text = ""
-    pdf_reader = PyPDF2.PdfReader(pdf_stream)
-    num_pages = len(pdf_reader.pages)
-    for page_num in range(num_pages):
-        page = pdf_reader.pages[page_num]
-        text += page.extract_text()
+    try:
+        pdf_reader = PyPDF2.PdfReader(pdf_stream)
+        num_pages = len(pdf_reader.pages)
+        for page_num in range(num_pages):
+            page = pdf_reader.pages[page_num]
+            text += page.extract_text()
+    except Exception as e:
+        print(f"An error occurred while extracting text from PDF: {e}", file=sys.stderr)
     return text
 
 # OCR Preprocessing functions
@@ -76,37 +89,40 @@ def match_template(image, template):
 
 # Function to extract text from image using OCR with preprocessing
 def extract_text_from_image(image_stream):
-    img = np.array(Image.open(image_stream))
+    try:
+        img = np.array(Image.open(image_stream))
 
-    gray = get_grayscale(img)
-    thresh = thresholding(gray)
-    opened = opening(gray)
-    edges = canny(gray)
-    deskewed = deskew(gray)
+        gray = get_grayscale(img)
+        thresh = thresholding(gray)
+        opened = opening(gray)
+        edges = canny(gray)
+        deskewed = deskew(gray)
 
-    text_thresh = pytesseract.image_to_string(thresh)
-    text_opened = pytesseract.image_to_string(opened)
-    text_edges = pytesseract.image_to_string(edges)
-    text_deskewed = pytesseract.image_to_string(deskewed)
+        text_thresh = pytesseract.image_to_string(thresh)
+        text_opened = pytesseract.image_to_string(opened)
+        text_edges = pytesseract.image_to_string(edges)
+        text_deskewed = pytesseract.image_to_string(deskewed)
 
     # Combine all extracted texts
-    combined_text = "\n".join([text_thresh, text_opened, text_edges, text_deskewed])
-
+        combined_text = "\n".join([text_thresh, text_opened, text_edges, text_deskewed])
+    except Exception as e:
+        print(f"An error occurred while extracting text from image: {e}", file=sys.stderr)
+        combined_text = ""
     return combined_text
 
 # Function to process each file and extract text
 def process_file(file_url):
-    response = requests.get(file_url)
-    file_stream = BytesIO(response.content)
-
-    if file_url.lower().endswith('.pdf'):
+    file, content_type = download_file(file_url)
+    if 'pdf' in content_type:
         print("Processing PDF:", file_url)
-        return extract_text_from_pdf(file_stream)
-    elif file_url.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp')):
+        return extract_text_from_pdf(file)
+    elif 'image' in content_type:
         print("Processing Image:", file_url)
-        return extract_text_from_image(file_stream)
+        return extract_text_from_image(file)
     else:
+        print("Unsupported file format:", file_url)
         return ""
+
 
 # This is your Appwrite function
 # It's executed each time we get a request
