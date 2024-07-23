@@ -112,7 +112,7 @@ def process_file(file_url):
 # It's executed each time we get a request
 def main(context):
     # You can log messages to the console
-    # context.log("Hello, Logs!")
+    context.log()
 
     # If something goes wrong, log an error
     # context.error("Hello, Errors!")
