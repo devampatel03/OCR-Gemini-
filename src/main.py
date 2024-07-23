@@ -1,6 +1,13 @@
 import os
 import subprocess
 import sys
+import pytesseract
+from PIL import Image
+import PyPDF2
+import cv2
+import numpy as np
+import requests
+from io import BytesIO
 
 # Install system dependencies
 def install_system_dependencies():
@@ -14,14 +21,7 @@ def install_system_dependencies():
 # Install system dependencies
 install_system_dependencies()
 
-import pytesseract
-from PIL import Image
-import PyPDF2
-import cv2
-import numpy as np
 import google.generativeai as genai
-import requests
-from io import BytesIO
 
 # Function to extract text from PDF
 def extract_text_from_pdf(pdf_stream):
@@ -112,60 +112,63 @@ def process_file(file_url):
 # It's executed each time we get a request
 def main(context):
     # You can log messages to the console
-    context.log()
-
+    
     # If something goes wrong, log an error
     # context.error("Hello, Errors!")
 
-
     # The `ctx.req` object contains the request data
-    if context.req.method == "POST":
-        req_data = context.req.body
-        file_url = req_data.get("url")
+    try:
+        if context.req.method == "POST":
+            req_data = context.req.body
+            file_url = req_data.get("url")
 
-        if not file_url:
-            return context.res.json(
-                {"error": "No URL provided in the request body."}, status_code=400
-            )
+            if not file_url:
+                return context.res.json(
+                    {"error": "No URL provided in the request body."}, status_code=400
+                )
 
-        # Process the file from the given URL
-        all_extracted_text = process_file(file_url)
+            # Process the file from the given URL
+            all_extracted_text = process_file(file_url)
 
-        # API Key for Google Generative AI
-        GOOGLE_API_KEY = 'AIzaSyB1tpMueN_3bPbnQGsNOYP7s_NvzrUEtcM'
-        genai.configure(api_key=GOOGLE_API_KEY)
+            # API Key for Google Generative AI
+            GOOGLE_API_KEY = 'YOUR_API_KEY'
+            genai.configure(api_key=GOOGLE_API_KEY)
 
-        model = genai.GenerativeModel('gemini-1.5-pro-latest')
+            model = genai.GenerativeModel('gemini-1.5-pro-latest')
 
-        # Construct the prompt
-        prompt = """
-        Please read and understand the provided context and extract all the tested parameters along with their values. Ensure that the parameters and their values are presented in a JSON object format.
+            # Construct the prompt
+            prompt = """
+            Please read and understand the provided context and extract all the tested parameters along with their values. Ensure that the parameters and their values are presented in a JSON object format.
 
-        Context:
-        """ + all_extracted_text + """
+            Context:
+            """ + all_extracted_text + """
 
-        Task:
-        1. Identify all the test parameters mentioned in the context.
-        2. Extract the corresponding values for each parameter.
-        3. Format the extracted parameters and values as a JSON object.
+            Task:
+            1. Identify all the test parameters mentioned in the context.
+            2. Extract the corresponding values for each parameter.
+            3. Format the extracted parameters and values as a JSON object.
 
-        Example format:
-        {
-            "all_relevant_information_related_to_hospital/clinic/lab": "value",
-            "all_relevant_information_related_to_patient": "value",
-            "parameter1": "value1",
-            "parameter2": "value2",
-            ...
-        }
+            Example format:
+            {
+                "all_relevant_information_related_to_hospital/clinic/lab": "value",
+                "all_relevant_information_related_to_patient": "value",
+                "parameter1": "value1",
+                "parameter2": "value2",
+                ...
+            }
 
-        Extracted parameters and values:
-        """
+            Extracted parameters and values:
+            """
 
-        # Generate content using the model
-        response = model.generate_content(prompt)
-        result = ''.join([p.text for p in response.candidates[0].content.parts])
-        context.log(result)
-        return context.res.json({"result": result})
+            # Generate content using the model
+            response = model.generate_content(prompt)
+            result = ''.join([p.text for p in response.candidates[0].content.parts])
+            context.log(result)
+            return context.res.json({"result": result})
+
+    except Exception as e:
+        context.log(f"An error occurred: {e}")
+        return context.res.json({"error": str(e)}, status_code=500)
 
     # `ctx.res.json()` is a handy helper for sending JSON
     return context.res.json(
