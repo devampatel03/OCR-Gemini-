@@ -312,6 +312,7 @@ def process_file(file_url):
 def main(context):
     try:
         if context.req.method == "POST":
+            context.log("Request received.")
             req_data = context.req.body
             file_url = req_data.get("url")
 
