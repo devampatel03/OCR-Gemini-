@@ -1,9 +1,8 @@
 appwrite
 numpy
-opencv-python
 pytesseract
 Pillow
 PyPDF2
 requests
 google-generativeai
-
+opencv-python-headless
