@@ -310,50 +310,45 @@ def process_file(file_url):
 # This is your Appwrite function
 # It's executed each time we get a request
 def main(context):
-    context.log(f"Request method: {context.req.method}")
+    if context.req.method == "OPTIONS":
+        return context.res.json(
+            {},
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type"
+            }
+        )
     
     if context.req.method == "POST":
-        context.log("POST method detected.")
-        
         req_data = context.req.body
-        context.log(f"Request body: {req_data}")
-
-        if not req_data:
-            context.log("Request body is empty.")
-            return context.res.json(
-                {"error": "No URL provided in the request body."}, status_code=400
-            )
-
         file_url = req_data.get("url")
-
+        
         if not file_url:
-            context.log("No URL provided in the request body.")
             return context.res.json(
                 {"error": "No URL provided in the request body."}, status_code=400
             )
 
-        # Process the file from the given URL
         all_extracted_text = process_file(file_url)
-        context.log(f"Extracted text: {all_extracted_text[:200]}...")  # Log the first 200 characters
-
+        context.log(f"Extracted text: {all_extracted_text[:200]}...")
+        
         # API Key for Google Generative AI
         GOOGLE_API_KEY = 'AIzaSyB1tpMueN_3bPbnQGsNOYP7s_NvzrUEtcM'
         genai.configure(api_key=GOOGLE_API_KEY)
-
+        
         model = genai.GenerativeModel('gemini-1.5-pro-latest')
 
-        # Construct the prompt
         prompt = """
         Please read and understand the provided context and extract all the tested parameters along with their values. Ensure that the parameters and their values are presented in a JSON object format.
-
+        
         Context:
         """ + all_extracted_text + """
-
+        
         Task:
         1. Identify all the test parameters mentioned in the context.
         2. Extract the corresponding values for each parameter.
         3. Format the extracted parameters and values as a JSON object.
-
+        
         Example format:
         {
             "all_relevant_information_related_to_hospital/clinic/lab": "value",
@@ -362,21 +357,19 @@ def main(context):
             "parameter2": "value2",
             ...
         }
-
+        
         Extracted parameters and values:
         """
-
-        context.log(f"Prompt: {prompt[:200]}...")  # Log the first 200 characters of the prompt
-
-        # Generate content using the model
+        
+        context.log(f"Prompt: {prompt[:200]}...")
+        
         response = model.generate_content(prompt)
         result = ''.join([p.text for p in response.candidates[0].content.parts])
         context.log("result can be seen below")
-        context.log(f"Generated result: {result[:200]}...")  # Log the first 200 characters of the result
-
+        context.log(f"Generated result: {result[:200]}...")
+        
         return context.res.json({"result": result})
-
-    context.log("Not a POST request.")
+    
     return context.res.json(
         {
             "motto": "Build like a team of hundreds_",
