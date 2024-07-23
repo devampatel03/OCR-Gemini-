@@ -207,9 +207,6 @@ import requests
 from io import BytesIO
 import google.generativeai as genai
 
-# Use opencv-python-headless to avoid the need for libGL
-# Ensure that you have this installed: `pip install opencv-python-headless`
-
 def download_file(url):
     print(f"Downloading file from URL: {url}")
     response = requests.get(url)
@@ -219,7 +216,7 @@ def download_file(url):
         return BytesIO(response.content), content_type
     else:
         raise Exception(f"Failed to download file from URL: {url}")
-    
+
 # Function to extract text from PDF
 def extract_text_from_pdf(pdf_stream):
     text = ""
@@ -313,24 +310,20 @@ def process_file(file_url):
 # This is your Appwrite function
 # It's executed each time we get a request
 def main(context):
-    # You can log messages to the console
-    
-    # If something goes wrong, log an error
-    # context.error("Hello, Errors!")
-
-    # The `ctx.req` object contains the request data
     try:
         if context.req.method == "POST":
             req_data = context.req.body
             file_url = req_data.get("url")
 
             if not file_url:
+                context.log("No URL provided in the request body.")
                 return context.res.json(
                     {"error": "No URL provided in the request body."}, status_code=400
                 )
 
             # Process the file from the given URL
             all_extracted_text = process_file(file_url)
+            context.log(f"Extracted text: {all_extracted_text[:200]}...")  # Log the first 200 characters
 
             # API Key for Google Generative AI
             GOOGLE_API_KEY = 'AIzaSyB1tpMueN_3bPbnQGsNOYP7s_NvzrUEtcM'
@@ -362,17 +355,20 @@ def main(context):
             Extracted parameters and values:
             """
 
+            context.log(f"Prompt: {prompt[:200]}...")  # Log the first 200 characters of the prompt
+
             # Generate content using the model
             response = model.generate_content(prompt)
             result = ''.join([p.text for p in response.candidates[0].content.parts])
-            context.log(result)
+            context.log("result can be seen below")
+            context.log(f"Generated result: {result[:200]}...")  # Log the first 200 characters of the result
+
             return context.res.json({"result": result})
 
     except Exception as e:
         context.log(f"An error occurred: {e}")
         return context.res.json({"error": str(e)}, status_code=500)
 
-    # `ctx.res.json()` is a handy helper for sending JSON
     return context.res.json(
         {
             "motto": "Build like a team of hundreds_",
@@ -381,3 +377,4 @@ def main(context):
             "getInspired": "https://builtwith.appwrite.io",
         }
     )
+
