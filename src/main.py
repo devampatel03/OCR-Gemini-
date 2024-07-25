@@ -330,45 +330,46 @@ def main(context):
             )
 
         all_extracted_text = process_file(file_url)
-        context.log(f"Extracted text: {all_extracted_text[:200]}...")
+        return context.res.json({"extracted_text": all_extracted_text})
+        # context.log(f"Extracted text: {all_extracted_text[:200]}...")
         
         # API Key for Google Generative AI
-        GOOGLE_API_KEY = 'AIzaSyB1tpMueN_3bPbnQGsNOYP7s_NvzrUEtcM'
-        genai.configure(api_key=GOOGLE_API_KEY)
+        # GOOGLE_API_KEY = 'AIzaSyB1tpMueN_3bPbnQGsNOYP7s_NvzrUEtcM'
+        # genai.configure(api_key=GOOGLE_API_KEY)
         
-        model = genai.GenerativeModel('gemini-1.5-pro-latest')
+        # model = genai.GenerativeModel('gemini-1.5-pro-latest')
 
-        prompt = """
-        Please read and understand the provided context and extract all the tested parameters along with their values. Ensure that the parameters and their values are presented in a JSON object format.
+        # prompt = """
+        # Please read and understand the provided context and extract all the tested parameters along with their values. Ensure that the parameters and their values are presented in a JSON object format.
         
-        Context:
-        """ + all_extracted_text + """
+        # Context:
+        # """ + all_extracted_text + """
         
-        Task:
-        1. Identify all the test parameters mentioned in the context.
-        2. Extract the corresponding values for each parameter.
-        3. Format the extracted parameters and values as a JSON object.
+        # Task:
+        # 1. Identify all the test parameters mentioned in the context.
+        # 2. Extract the corresponding values for each parameter.
+        # 3. Format the extracted parameters and values as a JSON object.
         
-        Example format:
-        {
-            "all_relevant_information_related_to_hospital/clinic/lab": "value",
-            "all_relevant_information_related_to_patient": "value",
-            "parameter1": "value1",
-            "parameter2": "value2",
-            ...
-        }
+        # Example format:
+        # {
+        #     "all_relevant_information_related_to_hospital/clinic/lab": "value",
+        #     "all_relevant_information_related_to_patient": "value",
+        #     "parameter1": "value1",
+        #     "parameter2": "value2",
+        #     ...
+        # }
         
-        Extracted parameters and values:
-        """
+        # Extracted parameters and values:
+        # """
         
-        context.log(f"Prompt: {prompt[:200]}...")
+        # context.log(f"Prompt: {prompt[:200]}...")
         
-        response = model.generate_content(prompt)
-        result = ''.join([p.text for p in response.candidates[0].content.parts])
-        context.log("result can be seen below")
-        context.log(f"Generated result: {result[:200]}...")
+        # response = model.generate_content(prompt)
+        # result = ''.join([p.text for p in response.candidates[0].content.parts])
+        # context.log("result can be seen below")
+        # context.log(f"Generated result: {result[:200]}...")
         
-        return context.res.json({"result": result})
+        # return context.res.json({"result": result})
     
     return context.res.json(
         {
